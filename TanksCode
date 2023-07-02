@@ -1,0 +1,117 @@
+import pygame
+
+# Инициализация Pygame
+pygame.init()
+
+# Цвета
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+
+# Размер окна
+window_width = 800
+window_height = 600
+
+# Создание окна
+window = pygame.display.set_mode((window_width, window_height))
+pygame.display.set_caption("Танки")
+
+# Загрузка изображений
+tank_img = pygame.image.load("tank.png")
+bullet_img = pygame.image.load("bullet.png")
+
+# Объект танк
+class Tank(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = tank_img
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.change_x = 0
+        self.change_y = 0
+
+    def changespeed(self, x, y):
+        self.change_x += x
+        self.change_y += y
+
+    def update(self):
+        self.rect.x += self.change_x
+        self.rect.y += self.change_y
+
+        if self.rect.x < 0:
+            self.rect.x = 0
+        if self.rect.x > window_width - 32:
+            self.rect.x = window_width - 32
+        if self.rect.y < 0:
+            self.rect.y = 0
+        if self.rect.y > window_height - 32:
+            self.rect.y = window_height - 32
+
+
+# Объект пуля
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, tank):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = bullet_img
+        self.rect = self.image.get_rect()
+        self.rect.x = tank.rect.x + 16
+        self.rect.y = tank.rect.y + 16
+
+    def update(self):
+        self.rect.x += 6
+        if self.rect.x > window_width:
+            self.kill()
+
+
+all_sprites = pygame.sprite.Group()
+bullets = pygame.sprite.Group()
+
+tank = Tank(0, 0)
+all_sprites.add(tank)
+
+# Основной игровой цикл
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                tank.changespeed(-2, 0)
+            elif event.key == pygame.K_RIGHT:
+                tank.changespeed(2, 0)
+            elif event.key == pygame.K_UP:
+                tank.changespeed(0, -2)
+            elif event.key == pygame.K_DOWN:
+                tank.changespeed(0, 2)
+            elif event.key == pygame.K_SPACE:
+                bullet = Bullet(tank)
+                all_sprites.add(bullet)
+                bullets.add(bullet)
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                tank.changespeed(2, 0)
+            elif event.key == pygame.K_RIGHT:
+                tank.changespeed(-2, 0)
+            elif event.key == pygame.K_UP:
+                tank.changespeed(0, 2)
+            elif event.key == pygame.K_DOWN:
+                tank.changespeed(0, -2)
+
+    # Обновление позиции танка и пуль
+    all_sprites.update()
+
+    # Проверка столкновений пуль с танками
+    for bullet in bullets:
+        tank_hit_list = pygame.sprite.spritecollide(bullet, tanks, True)
+        for tank in tank_hit_list:
+            bullets.remove(bullet)
+            all_sprites.remove(bullet)
+
+    # Отрисовка
+    window.fill(white)
+    all_sprites.draw(window)
+    pygame.display.flip()
+
+pygame.quit()
